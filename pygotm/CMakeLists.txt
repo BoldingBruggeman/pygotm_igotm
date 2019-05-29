@@ -16,8 +16,7 @@ endif()
 # Include GOTM's CMakeLists.txt.
 set(GOTM_EMBED_VERSION ON CACHE BOOL "Embed GOTM version information" FORCE)
 find_path(GOTM_BASE src/gotm/gotm.F90 DOC "Path to GOTM source directory.")
-set(GOTM_BUILD_LIBRARY ON)
-add_subdirectory(${GOTM_BASE}/src gotm)
+add_subdirectory(${GOTM_BASE} gotm EXCLUDE_FROM_ALL)
 mark_as_advanced(FORCE GOTM_EMBED_VERSION)
 
 # Add Python-FABM library
@@ -30,7 +29,7 @@ if(WIN32)
 endif()
 
 # Link in FABM itself
-target_link_libraries(python_gotm ${GOTM_LIBRARIES})
+target_link_libraries(python_gotm PRIVATE gotm)
 
 # Set include directories with modules (*.mod)
 set_property(TARGET python_gotm APPEND PROPERTY INCLUDE_DIRECTORIES "${CMAKE_CURRENT_BINARY_DIR}/gotm/modules")

@@ -16,7 +16,8 @@ contains
    
    subroutine initialize() bind(c)
 !DIR$ ATTRIBUTES DLLEXPORT :: initialize
-      use gotm, only: init_gotm
+      use gotm, only: init_gotm, read_nml
+      read_nml = .true.
       call init_gotm()
    end subroutine
 

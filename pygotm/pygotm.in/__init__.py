@@ -16,7 +16,7 @@ for dllpath in dllpaths:
    dllpath = os.path.join(searchdir,dllpath)
    if os.path.isfile(dllpath): break
 else:
-   print 'Unable to locate GOTM dynamic library %s.' % (' or '.join(dllpaths),)
+   print('Unable to locate GOTM dynamic library %s.' % (' or '.join(dllpaths),))
    sys.exit(1)
 
 # Load FABM library.
@@ -46,10 +46,12 @@ initialize = gotm.initialize
 finalize = gotm.finalize
 run = gotm.run
 
-redirect_output = gotm.redirect_output
 reset_output = gotm.reset_output
 
 set_time_bounds = gotm.set_time_bounds
+
+def redirect_output(outfile, errfile):
+   gotm.redirect_output(outfile.encode('ascii'), errfile.encode('ascii'))
 
 def get_time_bounds():
    imin = ctypes.c_int()
@@ -61,7 +63,7 @@ def get_version():
    version_length = 256
    strversion = ctypes.create_string_buffer(version_length)
    gotm.get_version(version_length,strversion)
-   return strversion.value
+   return strversion.value.decode('ascii')
 
 def get_schemas():
     return os.path.join(os.path.dirname(__file__), 'schemas')

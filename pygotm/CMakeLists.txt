@@ -1,16 +1,26 @@
-cmake_minimum_required(VERSION 2.8.8)
+cmake_minimum_required(VERSION 3.0)
 
 # Use solution folders in IDEs
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 # Create main project.
-project(python_gotm Fortran)
+project(python_gotm LANGUAGES Fortran)
 
 # Specify position-independent code since we will build a shared library.
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-if(WIN32)
+if(MSVC)
   add_compile_options("/libs:static")
+endif()
+
+# Customize compiler flags
+if(${CMAKE_Fortran_COMPILER_ID} STREQUAL "Intel")
+  if(MSVC)
+    set(CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS_DEBUG} /Od")
+  else()
+    # Do not warn about Windows-specific export directives
+    set (CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -diag-disable 7841")
+  endif()
 endif()
 
 # Include GOTM's CMakeLists.txt.
@@ -19,45 +29,31 @@ find_path(GOTM_BASE src/gotm/gotm.F90 DOC "Path to GOTM source directory.")
 add_subdirectory(${GOTM_BASE} gotm EXCLUDE_FROM_ALL)
 mark_as_advanced(FORCE GOTM_EMBED_VERSION)
 
-# Add Python-FABM library
+# Add Python-GOTM library
 add_library(python_gotm SHARED
             python_gotm.F90
            )
-
-if(WIN32)
+if(MSVC)
   set_property(TARGET python_gotm PROPERTY LINK_FLAGS_DEBUG "/NODEFAULTLIB:\"libcmt\"")
 endif()
 
-# Link in FABM itself
+# Link in GOTM itself
 target_link_libraries(python_gotm PRIVATE gotm)
-
-# Set include directories with modules (*.mod)
-set_property(TARGET python_gotm APPEND PROPERTY INCLUDE_DIRECTORIES "${CMAKE_CURRENT_BINARY_DIR}/gotm/modules")
 
 # Set include directories with header files (*.h)
 set_property(TARGET python_gotm APPEND PROPERTY INCLUDE_DIRECTORIES "${GOTM_BASE}/include")
 
-# Query Python itself for default installation prefix.
+# Find target Python interpreter.
 find_package(PythonInterp)
-execute_process(COMMAND ${PYTHON_EXECUTABLE} -m site --user-site
-                OUTPUT_VARIABLE SITE_PACKAGES_DIR
-                OUTPUT_STRIP_TRAILING_WHITESPACE)
-set(DEFAULT_PREFIX "${SITE_PACKAGES_DIR}")
 
-# Set cache variable with installation prefix.
-if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-  # None set - set our default prefix.
-  set(CMAKE_INSTALL_PREFIX "${DEFAULT_PREFIX}" CACHE PATH "Directory to install python_fabm in" FORCE)
-else()
-  # User specified a prefix - just update the variable description.
-  set(CMAKE_INSTALL_PREFIX "${DEFAULT_PREFIX}" CACHE PATH "Directory to install python_fabm in")
-endif()
-message(STATUS "Installation prefix: ${CMAKE_INSTALL_PREFIX}")
+# Build wheel
+add_custom_command(OUTPUT wheel.stamp
+                   COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/pygotm.in" pygotm
+                   COMMAND ${CMAKE_COMMAND} -E copy_directory "${GOTM_BASE}/schemas" pygotm/schemas
+                   COMMAND ${CMAKE_COMMAND} -E copy "$<TARGET_FILE:python_gotm>" pygotm/
+                   COMMAND ${PYTHON_EXECUTABLE} "${CMAKE_CURRENT_SOURCE_DIR}/setup.py" bdist_wheel
+                   VERBATIM)
+add_custom_target(wheel ALL DEPENDS wheel.stamp)
 
-install(TARGETS python_gotm
-  DESTINATION pygotm)
-install(DIRECTORY pygotm.in/
-  DESTINATION pygotm)
-install(DIRECTORY ${GOTM_BASE}/schemas/
-  DESTINATION pygotm/schemas)
-
+# Let pip install the wheel
+install(CODE "execute_process(COMMAND ${PYTHON_EXECUTABLE} -m pip install --no-index --find-links=${CMAKE_CURRENT_BINARY_DIR}/dist --user --force-reinstall --upgrade pygotm WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/dist)")

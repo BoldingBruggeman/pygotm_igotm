@@ -31,7 +31,7 @@ mark_as_advanced(FORCE GOTM_EMBED_VERSION)
 
 # Add Python-GOTM library
 add_library(python_gotm SHARED
-            python_gotm.F90
+            src/python_gotm.F90
            )
 if(MSVC)
   set_property(TARGET python_gotm PROPERTY LINK_FLAGS_DEBUG "/NODEFAULTLIB:\"libcmt\"")

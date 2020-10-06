@@ -48,7 +48,7 @@ find_package(PythonInterp)
 
 # Build wheel
 add_custom_command(OUTPUT wheel.stamp
-                   COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/pygotm.in" pygotm
+                   COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/pygotm" pygotm
                    COMMAND ${CMAKE_COMMAND} -E copy_directory "${GOTM_BASE}/schemas" pygotm/schemas
                    COMMAND ${CMAKE_COMMAND} -E copy "$<TARGET_FILE:python_gotm>" pygotm/
                    COMMAND ${PYTHON_EXECUTABLE} "${CMAKE_CURRENT_SOURCE_DIR}/setup.py" bdist_wheel

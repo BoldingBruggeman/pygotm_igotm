@@ -16,8 +16,8 @@ except ImportError:
 
 setup(
     name='pygotm',
-    version='0.1',
-    description='Python wrapper for GOTM',
+    version='0.1.1',
+    description='Python wrapper for the General Ocean Turbulence Model',
     author='Jorn Bruggeman',
     author_email='jorn@bolding-bruggeman.com',
     license='GPL',
